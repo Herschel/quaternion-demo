@@ -1,0 +1,12 @@
+[package]
+name = "quaternion-demo"
+version = "0.1.0"
+authors = ["Mike Welsh <mwelsh@gmail.com>"]
+
+[dependencies]
+glium = "0.21"
+nalgebra = "0.15"
+
+[dependencies.conrod]
+version = "0.60"
+features = ["glium", "winit"]
