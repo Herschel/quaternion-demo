@@ -92,9 +92,11 @@ fn main() -> Result<(), Box<Error>> {
 
     // Generate the widget identifiers.
     widget_ids!(struct Ids {
-        label1, label2,
-
         canvas,
+
+        euler_angles_button,
+        axis_angle_button,
+
         yaw, pitch, roll,
         axis_x, axis_y, axis_z,
         axis_angle,
@@ -126,6 +128,8 @@ fn main() -> Result<(), Box<Error>> {
     let mut euler_angles: [f32; 3] = [0.0; 3];
     let mut axis: Vector3<f32> = [1.0, 0.0, 0.0].into();
     let mut axis_angle: f32 = 0.0;
+
+    let mut euler_angles_mode = true;
 
     let mut animating = false;
     let mut animate_index = 0;
@@ -183,107 +187,123 @@ fn main() -> Result<(), Box<Error>> {
             const PAD: f64 = 10.0;
 
             use widget::Slider;
-            widget::Text::new("Euler Angles")
-                .mid_top_with_margin_on(ids.canvas, PAD)
-                .padded_w_of(ids.canvas, PAD)
-                .set(ids.label1, ui);
 
-            for value in Slider::new(euler_angles[0].to_degrees(), 0.0, 360.0)
-                .label("Yaw")
-                .label_color(color::RED)
-                .padded_w_of(ids.canvas, PAD)
+            if widget::Button::new()
+                .label("Euler Angles")
+                .label_color(if euler_angles_mode { color::RED } else { color::BLACK })
+                .top_left_with_margin_on(ids.canvas, PAD)
+                .w(120.0)
                 .h(30.0)
-                .set(ids.yaw, ui)
+                .padded_w_of(ids.canvas, PAD)
+                .set(ids.euler_angles_button, ui)
+                .was_clicked()
             {
-                euler_angles[0] = value.to_radians();
-                let cur_quaternion = quaternion_list.last_mut().unwrap();
-                *cur_quaternion = Quaternion::from_euler_angles(euler_angles[0], euler_angles[1], euler_angles[2]);
+                euler_angles_mode = true;
             }
 
-            for value in Slider::new(euler_angles[1].to_degrees(), 0.0, 360.0)
-                .label("Pitch")
-                .label_color(color::RED)
-
-                .padded_w_of(ids.canvas, PAD)
+            if widget::Button::new()
+                .label("Axis Angle")
+                .label_color(if !euler_angles_mode { color::RED } else { color::BLACK })
                 .h(30.0)
-                .set(ids.pitch, ui)
+                .set(ids.axis_angle_button, ui)
+                .was_clicked()
             {
-                euler_angles[1] = value.to_radians();
-                let cur_quaternion = quaternion_list.last_mut().unwrap();
-                *cur_quaternion = Quaternion::from_euler_angles(euler_angles[0], euler_angles[1], euler_angles[2]);
+                euler_angles_mode = false;
             }
 
-            for value in Slider::new(euler_angles[2].to_degrees(), 0.0, 360.0)
-                .label("Roll")
-                .label_color(color::RED)
+            if euler_angles_mode {
+                for value in Slider::new(euler_angles[0].to_degrees(), 0.0, 360.0)
+                    .label("Yaw")
+                    .label_color(color::RED)
+                    .padded_w_of(ids.canvas, PAD)
+                    .h(30.0)
+                    .set(ids.yaw, ui)
+                {
+                    euler_angles[0] = value.to_radians();
+                    let cur_quaternion = quaternion_list.last_mut().unwrap();
+                    *cur_quaternion = Quaternion::from_euler_angles(euler_angles[0], euler_angles[1], euler_angles[2]);
+                }
 
-                .padded_w_of(ids.canvas, PAD)
-                .h(30.0)
-                .set(ids.roll, ui)
-            {
-                euler_angles[2] = value.to_radians();
-                let cur_quaternion = quaternion_list.last_mut().unwrap();
-                *cur_quaternion = Quaternion::from_euler_angles(euler_angles[0], euler_angles[1], euler_angles[2]);
-            }
+                for value in Slider::new(euler_angles[1].to_degrees(), 0.0, 360.0)
+                    .label("Pitch")
+                    .label_color(color::RED)
+                    .padded_w_of(ids.canvas, PAD)
+                    .h(30.0)
+                    .set(ids.pitch, ui)
+                {
+                    euler_angles[1] = value.to_radians();
+                    let cur_quaternion = quaternion_list.last_mut().unwrap();
+                    *cur_quaternion = Quaternion::from_euler_angles(euler_angles[0], euler_angles[1], euler_angles[2]);
+                }
 
-            widget::Text::new("Axis Angle")
-                .padded_w_of(ids.canvas, PAD)
-                .set(ids.label2, ui);
+                for value in Slider::new(euler_angles[2].to_degrees(), 0.0, 360.0)
+                    .label("Roll")
+                    .label_color(color::RED)
 
-            for value in Slider::new(axis[0], 0.0, 1.0)
-                .label("Axis X")
-                .label_color(color::RED)
+                    .padded_w_of(ids.canvas, PAD)
+                    .h(30.0)
+                    .set(ids.roll, ui)
+                {
+                    euler_angles[2] = value.to_radians();
+                    let cur_quaternion = quaternion_list.last_mut().unwrap();
+                    *cur_quaternion = Quaternion::from_euler_angles(euler_angles[0], euler_angles[1], euler_angles[2]);
+                }
+            } else {
+                for value in Slider::new(axis[0], 0.0, 1.0)
+                    .label("Axis X")
+                    .label_color(color::RED)
 
-                .padded_w_of(ids.canvas, PAD)
-                .h(30.0)
-                .set(ids.axis_x, ui)
-            {
-                axis[0] = value;
-                let n = axis.clone().normalize();
-                let cur_quaternion = quaternion_list.last_mut().unwrap();
-                *cur_quaternion = Quaternion::from_axis_angle(n[0], n[1], n[2], axis_angle);
-            }
+                    .padded_w_of(ids.canvas, PAD)
+                    .h(30.0)
+                    .set(ids.axis_x, ui)
+                {
+                    axis[0] = value;
+                    let n = axis.clone().normalize();
+                    let cur_quaternion = quaternion_list.last_mut().unwrap();
+                    *cur_quaternion = Quaternion::from_axis_angle(n[0], n[1], n[2], axis_angle);
+                }
 
-            for value in Slider::new(axis[1], 0.0, 1.0)
-                .label("Axis Y")
-                .label_color(color::RED)
+                for value in Slider::new(axis[1], 0.0, 1.0)
+                    .label("Axis Y")
+                    .label_color(color::RED)
 
-                .padded_w_of(ids.canvas, PAD)
-                .h(30.0)
-                .set(ids.axis_y, ui)
-            {
-                axis[1] = value;
-                let n = axis.clone().normalize();
-                let cur_quaternion = quaternion_list.last_mut().unwrap();
-                *cur_quaternion = Quaternion::from_axis_angle(n[0], n[1], n[2], axis_angle);
-            }
+                    .padded_w_of(ids.canvas, PAD)
+                    .h(30.0)
+                    .set(ids.axis_y, ui)
+                {
+                    axis[1] = value;
+                    let n = axis.clone().normalize();
+                    let cur_quaternion = quaternion_list.last_mut().unwrap();
+                    *cur_quaternion = Quaternion::from_axis_angle(n[0], n[1], n[2], axis_angle);
+                }
 
-            for value in Slider::new(axis[2], 0.0, 1.0)
-                .label("Axis Z")
-                .label_color(color::RED)
+                for value in Slider::new(axis[2], 0.0, 1.0)
+                    .label("Axis Z")
+                    .label_color(color::RED)
 
-                .padded_w_of(ids.canvas, PAD)
-                .h(30.0)
-                .set(ids.axis_z, ui)
-            {
-                axis[2] = value;
-                let n = axis.clone().normalize();
-                let cur_quaternion = quaternion_list.last_mut().unwrap();
-                *cur_quaternion = Quaternion::from_axis_angle(n[0], n[1], n[2], axis_angle);
-            }
+                    .padded_w_of(ids.canvas, PAD)
+                    .h(30.0)
+                    .set(ids.axis_z, ui)
+                {
+                    axis[2] = value;
+                    let n = axis.clone().normalize();
+                    let cur_quaternion = quaternion_list.last_mut().unwrap();
+                    *cur_quaternion = Quaternion::from_axis_angle(n[0], n[1], n[2], axis_angle);
+                }
 
-            for value in Slider::new(axis_angle.to_degrees(), 0.0, 360.0)
-                .label("Angle")
-                .label_color(color::RED)
+                for value in Slider::new(axis_angle.to_degrees(), 0.0, 360.0)
+                    .label("Angle")
+                    .label_color(color::RED)
 
-                .padded_w_of(ids.canvas, PAD)
-                .h(30.0)
-                .set(ids.axis_angle, ui)
-            {
-                axis_angle = value.to_radians();
-                let n = axis.clone().normalize();
-                let cur_quaternion = quaternion_list.last_mut().unwrap();
-                *cur_quaternion = Quaternion::from_axis_angle(n[0], n[1], n[2], axis_angle);
+                    .padded_w_of(ids.canvas, PAD)
+                    .h(30.0)
+                    .set(ids.axis_angle, ui)
+                {
+                    axis_angle = value.to_radians();
+                    let n = axis.clone().normalize();
+                    let cur_quaternion = quaternion_list.last_mut().unwrap();
+                    *cur_quaternion = Quaternion::from_axis_angle(n[0], n[1], n[2], axis_angle);
+                }
             }
 
             if widget::Button::new()
@@ -392,16 +412,6 @@ fn create_axes_model(display: &glium::Display) -> Result<Model, Box<Error>> {
     const FRONT: [f32; 3] = [0.0, 0.0, 1.0];
     const BACK: [f32; 3] = [0.0, 0.0, -1.0];
 
-    // let vertices = vec![
-    //     Vertex { position: [0.0, 0.0, 0.0], color: RED },
-    //     Vertex { position: [1.0, 0.0, 0.0], color: RED },
-
-    //     Vertex { position: [0.0, 0.0, 0.0], color: GREEN },
-    //     Vertex { position: [0.0, 1.0, 0.0], color: GREEN },
-
-    //     Vertex { position: [0.0, 0.0, 0.0], color: BLUE },
-    //     Vertex { position: [0.0, 0.0, 1.0], color: BLUE },
-    // ];
     let vertices = vec![
         // -y
         Vertex { position: [-0.5, -0.5, -0.5], color: GRAY, normal: DOWN },
