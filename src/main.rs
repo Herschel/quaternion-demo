@@ -311,6 +311,8 @@ fn main() -> Result<(), Box<Error>> {
                 .set(ids.add_rotation, ui)
                 .was_clicked()
             {
+                euler_angles = [0.0, 0.0, 0.0];
+                axis_angle = 0.0;
                 quaternion_list.push(Quaternion::identity());
             }
 
